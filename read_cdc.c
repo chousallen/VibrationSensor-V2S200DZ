@@ -45,8 +45,8 @@ void handle_signal(int sig) {
 void parse_arg(int argc, char* argv[], struct my_args_t *my_args)
 {
     // set default arguments
-    my_args->tty_dev = "/dev/ttyACM0";
-    my_args->o_csv_file = "vibration_data.csv";
+    my_args->tty_dev = "/dev/ttyACM1";
+    my_args->o_csv_file = "data/vibration_data.csv";
 
     for(int i = 1; i < argc; i++)
     {
