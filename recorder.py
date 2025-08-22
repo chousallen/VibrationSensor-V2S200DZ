@@ -10,38 +10,6 @@ import time
 import logging
 logger = logging.getLogger(__name__)
 
-# Custom colored formatter for console output
-class ColoredFormatter(logging.Formatter):
-    """Custom formatter to add colors to log levels"""
-    
-    # ANSI color codes
-    HEADERS = {
-        'DEBUG': '\033[92mD: ',      # Green
-        'INFO': '\033[97mI: ',       # White  
-        'WARNING': '\033[93mW: ',    # Yellow
-        'ERROR': '\033[91mE: ',      # Red
-        'CRITICAL': '\033[95mC: ',   # Magenta
-    }
-    RESET = '\033[0m'
-    
-    def format(self, recorder):
-        log_header = self.HEADERS.get(recorder.levelname, '')
-        recorder.levelname = f"{log_header}{recorder.levelname}{self.RESET}"
-        recorder.msg = f"{log_header}[{__name__}] {recorder.msg}{self.RESET}"
-        return super().format(recorder)
-
-logging.basicConfig(level=logging.DEBUG, format='%(levelname)s: %(message)s')
-# Get the root logger which has the handler from basicConfig
-root_logger = logging.getLogger()
-handler = root_logger.handlers[0]
-handler.setFormatter(ColoredFormatter())
-
-# Now set up our module logger to use the same handler
-logger.setLevel(logging.DEBUG)
-logger.addHandler(handler)
-logger.propagate = False  # Prevent duplicate logs
-
-
 cmg_cli_path = '/home/tt/.local/bin/cmg-cli'
 
 def det_vib_port():
@@ -182,7 +150,7 @@ def rot_wh_gim(wheel_speed, gimbal_speed, cmg_port=None):
             return False
     
     try:
-        logger.debug(f"Starting CMG rotation: wheel={wheel_speed} rps, gimbal={gimbal_speed} rps on {cmg_port}")
+        logger.debug(f"Start CMG rotation: wheel={wheel_speed} rps, gimbal={gimbal_speed} rps on {cmg_port}")
         # Run cmg-cli command to set wheel and gimbal speeds
         result = subprocess.run(
             [cmg_cli_path, 'set', '--cmg', f'{wheel_speed},{gimbal_speed}', '-p', cmg_port],
@@ -191,8 +159,6 @@ def rot_wh_gim(wheel_speed, gimbal_speed, cmg_port=None):
             check=True,
             timeout=10
         )
-        
-        logger.debug(f"Successfully started CMG rotation: wheel={wheel_speed} rps, gimbal={gimbal_speed} rps")
         return True
         
     except subprocess.CalledProcessError as e:
