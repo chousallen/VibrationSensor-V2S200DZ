@@ -201,7 +201,7 @@ int main(int argc, char* argv[])
             uint64_t data_timestamp = (uint32_t)frame_buff[1] * 1000; // in microseconds
             for(int i = 2; i < FRAME_TOTAL_INTS - 1; i++)
             {
-                fprintf(fcsv, "%lu,%d\n", data_timestamp, frame_buff[i]);
+                fprintf(fcsv, "%lu,%d\n", data_timestamp - last_frame_timestamp * 1000, frame_buff[i]);
                 data_timestamp += (FRAME_INTERVAL * 1000) / (FRAME_TOTAL_INTS - 3); // Increment timestamp by frame interval
             }
 

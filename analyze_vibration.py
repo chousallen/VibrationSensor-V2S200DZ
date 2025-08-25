@@ -184,7 +184,7 @@ def main():
     ap.add_argument('--fs', type=float, default=12500, help='Sampling rate in Hz (e.g., 12500)')
     ap.add_argument('--column', default=1, help='Column index or name to read (default: 1)')
     ap.add_argument('--skiprows', type=int, default=1, help='Number of header rows to skip (default: 1)')
-    ap.add_argument('--calib', type=float, default=1.0, help='Calibration factor to scale raw counts to engineering units (e.g., g per count)')
+    ap.add_argument('--calib', type=float, default=0.00000212, help='Calibration factor to scale raw counts to engineering units (e.g., g per count)')
     ap.add_argument('--nperseg', type=int, default=4096, help='Welch segment length (default: 4096)')
     ap.add_argument('--overlap', type=float, default=0.5, help='Welch overlap fraction 0..0.95 (default: 0.5)')
     ap.add_argument('--fmax', type=float, default=None, help='Max frequency to display (Hz)')
@@ -195,8 +195,6 @@ def main():
     if args.outdir is None:
         csv_base = args.input.replace('.csv', '')
         args.outdir = csv_base
-        print(csv_base)
-        exit(0)
 
     os.makedirs(args.outdir, exist_ok=True)
 
