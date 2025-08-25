@@ -175,6 +175,47 @@ def rot_wh_gim(wheel_speed, gimbal_speed, cmg_port=None):
         logger.error(f"Error starting CMG rotation: {e}")
         return False
 
+def rot_wh(wheel_speed, gimbal_angle, cmg_port=None):
+    """
+    Rotates the wheel at a specific gimbal angle using cmg-cli.
+    
+    Args:
+        wheel_speed (float): Wheel speed in rps (revolutions per second)
+        gimbal_angle (float): Gimbal angle in degrees
+        cmg_port (str, optional): CMG tty port. If None, will auto-detect
+    
+    Returns:
+        bool: True if successful, False otherwise
+    """
+    # Auto-detect CMG port if not provided
+    if cmg_port is None:
+        cmg_port = det_cmg_port()
+        if cmg_port is None:
+            logger.error("Could not detect CMG port")
+            return False
+    try:
+        logger.debug(f"Set wheel: {wheel_speed} rps, gimbal angle: {gimbal_angle} deg on {cmg_port}")
+        result = subprocess.run(
+            [cmg_cli_path, 'set', '--rw', f'{wheel_speed},{gimbal_angle}', '-p', cmg_port],
+            capture_output=True,
+            text=True,
+            check=True,
+            timeout=10
+        )
+        return True
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Error setting wheel/gimbal angle: {e}")
+        if e.stdout:
+            logger.debug(f"stdout: {e.stdout}")
+        if e.stderr:
+            logger.debug(f"stderr: {e.stderr}")
+        return False
+    except subprocess.TimeoutExpired:
+        logger.error(f"Timeout setting wheel/gimbal angle on {cmg_port}")
+        return False
+    except Exception as e:
+        logger.error(f"Error setting wheel/gimbal angle: {e}")
+        return False
 
 def record(output_path, duration, vib_port=None):
     """
