@@ -2,3 +2,5 @@
 **/.settings/
 **/Debug/
 **/bin/
+./whsp_gimsp/
+**/__pycache__/
