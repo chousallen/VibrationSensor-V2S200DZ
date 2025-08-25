@@ -178,17 +178,25 @@ def plot_spectrogram(x, fs, outpath, nperseg=1024, overlap=0.75, window='hann', 
     plt.close()
 
 def main():
+
     ap = argparse.ArgumentParser(description='Frequency-domain analysis of vibration CSV data (no SciPy).')
     ap.add_argument('--input', required=True, help='Path to CSV file with samples')
-    ap.add_argument('--fs', type=float, required=True, help='Sampling rate in Hz (e.g., 12500)')
+    ap.add_argument('--fs', type=float, default=12500, help='Sampling rate in Hz (e.g., 12500)')
     ap.add_argument('--column', default=1, help='Column index or name to read (default: 1)')
     ap.add_argument('--skiprows', type=int, default=1, help='Number of header rows to skip (default: 1)')
     ap.add_argument('--calib', type=float, default=1.0, help='Calibration factor to scale raw counts to engineering units (e.g., g per count)')
     ap.add_argument('--nperseg', type=int, default=4096, help='Welch segment length (default: 4096)')
     ap.add_argument('--overlap', type=float, default=0.5, help='Welch overlap fraction 0..0.95 (default: 0.5)')
     ap.add_argument('--fmax', type=float, default=None, help='Max frequency to display (Hz)')
-    ap.add_argument('--outdir', default='out', help='Output directory for plots and CSV')
+    ap.add_argument('--outdir', default=None, help='Output directory for plots and CSV (default: same as CSV file name without extension)')
     args = ap.parse_args()
+
+    # Set default output directory to CSV file's base name if not specified
+    if args.outdir is None:
+        csv_base = args.input.replace('.csv', '')
+        args.outdir = csv_base
+        print(csv_base)
+        exit(0)
 
     os.makedirs(args.outdir, exist_ok=True)
 
