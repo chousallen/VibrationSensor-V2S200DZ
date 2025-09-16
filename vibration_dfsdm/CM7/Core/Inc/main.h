@@ -51,6 +51,8 @@ extern "C" {
 
 /* USER CODE END EM */
 
+void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
+
 /* Exported functions prototypes ---------------------------------------------*/
 void Error_Handler(void);
 
@@ -60,13 +62,15 @@ void Error_Handler(void);
 
 /* Private defines -----------------------------------------------------------*/
 #define USB_CDC_TX_BUFF_SIZE 5012
+#define BUZ_TIM_PSC 16000
+#define BUZ_TIM_PRD 50
 
 /* USER CODE BEGIN Private defines */
 // In number of 32-bit words
 #define USB_CDC_TX_BUFF_LEN USB_CDC_TX_BUFF_SIZE/4
 
-// Start of USB frame
-#define USB_SOF 0x55555555
+// Start of USB frame (base value)
+#define USB_SOF_BASE 0x55555555
 // End of USB frame
 #define USB_EOF 0xAAAAAAAA
 

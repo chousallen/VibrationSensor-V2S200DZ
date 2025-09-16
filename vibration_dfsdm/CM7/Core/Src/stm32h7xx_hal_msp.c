@@ -25,6 +25,12 @@
 /* USER CODE END Includes */
 extern DMA_HandleTypeDef hdma_dfsdm1_flt0;
 
+extern DMA_HandleTypeDef hdma_dfsdm1_flt1;
+
+extern DMA_HandleTypeDef hdma_dfsdm1_flt2;
+
+extern DMA_HandleTypeDef hdma_dfsdm1_flt3;
+
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN TD */
 
@@ -58,7 +64,9 @@ extern DMA_HandleTypeDef hdma_dfsdm1_flt0;
 /* USER CODE BEGIN 0 */
 
 /* USER CODE END 0 */
-/**
+
+void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
+                    /**
   * Initializes the Global MSP.
   */
 void HAL_MspInit(void)
@@ -89,7 +97,6 @@ static uint32_t DFSDM1_Init = 0;
 void HAL_DFSDM_FilterMspInit(DFSDM_Filter_HandleTypeDef* hdfsdm_filter)
 {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
-  HAL_DMA_MuxSyncConfigTypeDef pSyncConfig;
   RCC_PeriphCLKInitTypeDef PeriphClkInitStruct = {0};
   if(DFSDM1_Init == 0)
   {
@@ -112,12 +119,23 @@ void HAL_DFSDM_FilterMspInit(DFSDM_Filter_HandleTypeDef* hdfsdm_filter)
       __HAL_RCC_DFSDM1_CLK_ENABLE();
     }
 
+    __HAL_RCC_GPIOE_CLK_ENABLE();
     __HAL_RCC_GPIOC_CLK_ENABLE();
     /**DFSDM1 GPIO Configuration
+    PE4     ------> DFSDM1_DATIN3
+    PC0     ------> DFSDM1_DATIN4
     PC2_C     ------> DFSDM1_CKOUT
     PC3_C     ------> DFSDM1_DATIN1
+    PE7     ------> DFSDM1_DATIN2
     */
-    GPIO_InitStruct.Pin = GPIO_PIN_2;
+    GPIO_InitStruct.Pin = GPIO_PIN_4|GPIO_PIN_7;
+    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+    GPIO_InitStruct.Alternate = GPIO_AF3_DFSDM1;
+    HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
+
+    GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_2;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -159,20 +177,88 @@ void HAL_DFSDM_FilterMspInit(DFSDM_Filter_HandleTypeDef* hdfsdm_filter)
       Error_Handler();
     }
 
-    pSyncConfig.SyncSignalID = HAL_DMAMUX1_SYNC_EXTI0;
-    pSyncConfig.SyncPolarity = HAL_DMAMUX_SYNC_NO_EVENT;
-    pSyncConfig.SyncEnable = DISABLE;
-    pSyncConfig.EventEnable = ENABLE;
-    pSyncConfig.RequestNumber = 1;
-    if (HAL_DMAEx_ConfigMuxSync(&hdma_dfsdm1_flt0, &pSyncConfig) != HAL_OK)
+    /* Several peripheral DMA handle pointers point to the same DMA handle.
+     Be aware that there is only one channel to perform all the requested DMAs. */
+    __HAL_LINKDMA(hdfsdm_filter,hdmaInj,hdma_dfsdm1_flt0);
+    __HAL_LINKDMA(hdfsdm_filter,hdmaReg,hdma_dfsdm1_flt0);
+  }
+
+    /* DFSDM1_FLT1 Init */
+  if(hdfsdm_filter->Instance == DFSDM1_Filter1){
+    hdma_dfsdm1_flt1.Instance = DMA1_Stream1;
+    hdma_dfsdm1_flt1.Init.Request = DMA_REQUEST_DFSDM1_FLT1;
+    hdma_dfsdm1_flt1.Init.Direction = DMA_PERIPH_TO_MEMORY;
+    hdma_dfsdm1_flt1.Init.PeriphInc = DMA_PINC_DISABLE;
+    hdma_dfsdm1_flt1.Init.MemInc = DMA_MINC_ENABLE;
+    hdma_dfsdm1_flt1.Init.PeriphDataAlignment = DMA_PDATAALIGN_WORD;
+    hdma_dfsdm1_flt1.Init.MemDataAlignment = DMA_MDATAALIGN_WORD;
+    hdma_dfsdm1_flt1.Init.Mode = DMA_CIRCULAR;
+    hdma_dfsdm1_flt1.Init.Priority = DMA_PRIORITY_HIGH;
+    hdma_dfsdm1_flt1.Init.FIFOMode = DMA_FIFOMODE_ENABLE;
+    hdma_dfsdm1_flt1.Init.FIFOThreshold = DMA_FIFO_THRESHOLD_FULL;
+    hdma_dfsdm1_flt1.Init.MemBurst = DMA_MBURST_INC4;
+    hdma_dfsdm1_flt1.Init.PeriphBurst = DMA_PBURST_SINGLE;
+    if (HAL_DMA_Init(&hdma_dfsdm1_flt1) != HAL_OK)
     {
       Error_Handler();
     }
 
     /* Several peripheral DMA handle pointers point to the same DMA handle.
      Be aware that there is only one channel to perform all the requested DMAs. */
-    __HAL_LINKDMA(hdfsdm_filter,hdmaInj,hdma_dfsdm1_flt0);
-    __HAL_LINKDMA(hdfsdm_filter,hdmaReg,hdma_dfsdm1_flt0);
+    __HAL_LINKDMA(hdfsdm_filter,hdmaInj,hdma_dfsdm1_flt1);
+    __HAL_LINKDMA(hdfsdm_filter,hdmaReg,hdma_dfsdm1_flt1);
+  }
+
+    /* DFSDM1_FLT2 Init */
+  if(hdfsdm_filter->Instance == DFSDM1_Filter2){
+    hdma_dfsdm1_flt2.Instance = DMA1_Stream2;
+    hdma_dfsdm1_flt2.Init.Request = DMA_REQUEST_DFSDM1_FLT2;
+    hdma_dfsdm1_flt2.Init.Direction = DMA_PERIPH_TO_MEMORY;
+    hdma_dfsdm1_flt2.Init.PeriphInc = DMA_PINC_DISABLE;
+    hdma_dfsdm1_flt2.Init.MemInc = DMA_MINC_ENABLE;
+    hdma_dfsdm1_flt2.Init.PeriphDataAlignment = DMA_PDATAALIGN_WORD;
+    hdma_dfsdm1_flt2.Init.MemDataAlignment = DMA_MDATAALIGN_WORD;
+    hdma_dfsdm1_flt2.Init.Mode = DMA_CIRCULAR;
+    hdma_dfsdm1_flt2.Init.Priority = DMA_PRIORITY_HIGH;
+    hdma_dfsdm1_flt2.Init.FIFOMode = DMA_FIFOMODE_ENABLE;
+    hdma_dfsdm1_flt2.Init.FIFOThreshold = DMA_FIFO_THRESHOLD_FULL;
+    hdma_dfsdm1_flt2.Init.MemBurst = DMA_MBURST_INC4;
+    hdma_dfsdm1_flt2.Init.PeriphBurst = DMA_PBURST_SINGLE;
+    if (HAL_DMA_Init(&hdma_dfsdm1_flt2) != HAL_OK)
+    {
+      Error_Handler();
+    }
+
+    /* Several peripheral DMA handle pointers point to the same DMA handle.
+     Be aware that there is only one channel to perform all the requested DMAs. */
+    __HAL_LINKDMA(hdfsdm_filter,hdmaInj,hdma_dfsdm1_flt2);
+    __HAL_LINKDMA(hdfsdm_filter,hdmaReg,hdma_dfsdm1_flt2);
+  }
+
+    /* DFSDM1_FLT3 Init */
+  if(hdfsdm_filter->Instance == DFSDM1_Filter3){
+    hdma_dfsdm1_flt3.Instance = DMA1_Stream3;
+    hdma_dfsdm1_flt3.Init.Request = DMA_REQUEST_DFSDM1_FLT3;
+    hdma_dfsdm1_flt3.Init.Direction = DMA_PERIPH_TO_MEMORY;
+    hdma_dfsdm1_flt3.Init.PeriphInc = DMA_PINC_DISABLE;
+    hdma_dfsdm1_flt3.Init.MemInc = DMA_MINC_ENABLE;
+    hdma_dfsdm1_flt3.Init.PeriphDataAlignment = DMA_PDATAALIGN_WORD;
+    hdma_dfsdm1_flt3.Init.MemDataAlignment = DMA_MDATAALIGN_WORD;
+    hdma_dfsdm1_flt3.Init.Mode = DMA_CIRCULAR;
+    hdma_dfsdm1_flt3.Init.Priority = DMA_PRIORITY_HIGH;
+    hdma_dfsdm1_flt3.Init.FIFOMode = DMA_FIFOMODE_ENABLE;
+    hdma_dfsdm1_flt3.Init.FIFOThreshold = DMA_FIFO_THRESHOLD_FULL;
+    hdma_dfsdm1_flt3.Init.MemBurst = DMA_MBURST_INC4;
+    hdma_dfsdm1_flt3.Init.PeriphBurst = DMA_PBURST_SINGLE;
+    if (HAL_DMA_Init(&hdma_dfsdm1_flt3) != HAL_OK)
+    {
+      Error_Handler();
+    }
+
+    /* Several peripheral DMA handle pointers point to the same DMA handle.
+     Be aware that there is only one channel to perform all the requested DMAs. */
+    __HAL_LINKDMA(hdfsdm_filter,hdmaInj,hdma_dfsdm1_flt3);
+    __HAL_LINKDMA(hdfsdm_filter,hdmaReg,hdma_dfsdm1_flt3);
   }
 
 }
@@ -208,12 +294,23 @@ void HAL_DFSDM_ChannelMspInit(DFSDM_Channel_HandleTypeDef* hdfsdm_channel)
       __HAL_RCC_DFSDM1_CLK_ENABLE();
     }
 
+    __HAL_RCC_GPIOE_CLK_ENABLE();
     __HAL_RCC_GPIOC_CLK_ENABLE();
     /**DFSDM1 GPIO Configuration
+    PE4     ------> DFSDM1_DATIN3
+    PC0     ------> DFSDM1_DATIN4
     PC2_C     ------> DFSDM1_CKOUT
     PC3_C     ------> DFSDM1_DATIN1
+    PE7     ------> DFSDM1_DATIN2
     */
-    GPIO_InitStruct.Pin = GPIO_PIN_2;
+    GPIO_InitStruct.Pin = GPIO_PIN_4|GPIO_PIN_7;
+    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+    GPIO_InitStruct.Alternate = GPIO_AF3_DFSDM1;
+    HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
+
+    GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_2;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -254,10 +351,15 @@ void HAL_DFSDM_FilterMspDeInit(DFSDM_Filter_HandleTypeDef* hdfsdm_filter)
     __HAL_RCC_DFSDM1_CLK_DISABLE();
 
     /**DFSDM1 GPIO Configuration
+    PE4     ------> DFSDM1_DATIN3
+    PC0     ------> DFSDM1_DATIN4
     PC2_C     ------> DFSDM1_CKOUT
     PC3_C     ------> DFSDM1_DATIN1
+    PE7     ------> DFSDM1_DATIN2
     */
-    HAL_GPIO_DeInit(GPIOC, GPIO_PIN_2|GPIO_PIN_3);
+    HAL_GPIO_DeInit(GPIOE, GPIO_PIN_4|GPIO_PIN_7);
+
+    HAL_GPIO_DeInit(GPIOC, GPIO_PIN_0|GPIO_PIN_2|GPIO_PIN_3);
 
     /* DFSDM1 DMA DeInit */
     HAL_DMA_DeInit(hdfsdm_filter->hdmaInj);
@@ -287,14 +389,90 @@ void HAL_DFSDM_ChannelMspDeInit(DFSDM_Channel_HandleTypeDef* hdfsdm_channel)
     __HAL_RCC_DFSDM1_CLK_DISABLE();
 
     /**DFSDM1 GPIO Configuration
+    PE4     ------> DFSDM1_DATIN3
+    PC0     ------> DFSDM1_DATIN4
     PC2_C     ------> DFSDM1_CKOUT
     PC3_C     ------> DFSDM1_DATIN1
+    PE7     ------> DFSDM1_DATIN2
     */
-    HAL_GPIO_DeInit(GPIOC, GPIO_PIN_2|GPIO_PIN_3);
+    HAL_GPIO_DeInit(GPIOE, GPIO_PIN_4|GPIO_PIN_7);
+
+    HAL_GPIO_DeInit(GPIOC, GPIO_PIN_0|GPIO_PIN_2|GPIO_PIN_3);
 
     /* USER CODE BEGIN DFSDM1_MspDeInit 1 */
 
     /* USER CODE END DFSDM1_MspDeInit 1 */
+  }
+
+}
+
+/**
+  * @brief TIM_Base MSP Initialization
+  * This function configures the hardware resources used in this example
+  * @param htim_base: TIM_Base handle pointer
+  * @retval None
+  */
+void HAL_TIM_Base_MspInit(TIM_HandleTypeDef* htim_base)
+{
+  if(htim_base->Instance==TIM1)
+  {
+    /* USER CODE BEGIN TIM1_MspInit 0 */
+
+    /* USER CODE END TIM1_MspInit 0 */
+    /* Peripheral clock enable */
+    __HAL_RCC_TIM1_CLK_ENABLE();
+    /* USER CODE BEGIN TIM1_MspInit 1 */
+
+    /* USER CODE END TIM1_MspInit 1 */
+
+  }
+
+}
+
+void HAL_TIM_MspPostInit(TIM_HandleTypeDef* htim)
+{
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
+  if(htim->Instance==TIM1)
+  {
+    /* USER CODE BEGIN TIM1_MspPostInit 0 */
+
+    /* USER CODE END TIM1_MspPostInit 0 */
+
+    __HAL_RCC_GPIOE_CLK_ENABLE();
+    /**TIM1 GPIO Configuration
+    PE9     ------> TIM1_CH1
+    */
+    GPIO_InitStruct.Pin = GPIO_PIN_9;
+    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+    GPIO_InitStruct.Alternate = GPIO_AF1_TIM1;
+    HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
+
+    /* USER CODE BEGIN TIM1_MspPostInit 1 */
+
+    /* USER CODE END TIM1_MspPostInit 1 */
+  }
+
+}
+/**
+  * @brief TIM_Base MSP De-Initialization
+  * This function freeze the hardware resources used in this example
+  * @param htim_base: TIM_Base handle pointer
+  * @retval None
+  */
+void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef* htim_base)
+{
+  if(htim_base->Instance==TIM1)
+  {
+    /* USER CODE BEGIN TIM1_MspDeInit 0 */
+
+    /* USER CODE END TIM1_MspDeInit 0 */
+    /* Peripheral clock disable */
+    __HAL_RCC_TIM1_CLK_DISABLE();
+    /* USER CODE BEGIN TIM1_MspDeInit 1 */
+
+    /* USER CODE END TIM1_MspDeInit 1 */
   }
 
 }
