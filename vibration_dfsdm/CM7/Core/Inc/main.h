@@ -62,8 +62,8 @@ void Error_Handler(void);
 
 /* Private defines -----------------------------------------------------------*/
 #define USB_CDC_TX_BUFF_SIZE 5012
-#define BUZ_TIM_PSC 16000
-#define BUZ_TIM_PRD 50
+#define TIM1_PRD 10
+#define TIM1_PSC 16
 
 /* USER CODE BEGIN Private defines */
 // In number of 32-bit words

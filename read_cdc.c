@@ -8,7 +8,7 @@
 #include <string.h>
 
 // Frame structure constants
-#define USB_SOF 0x55555555
+uint32_t USB_SOF = 0x55555555;
 #define USB_EOF 0xAAAAAAAA
 #define N_FRAME_DATA 1250
 #define FRAME_TOTAL_INTS 1253  // SOF + timestamp + 1250 data + EOF
@@ -57,6 +57,36 @@ void parse_arg(int argc, char* argv[], struct my_args_t *my_args)
         else if(strcmp(argv[i], "-o") == 0 && ++i < argc)
         {
             my_args->o_csv_file = argv[i];
+        }
+        else if(strcmp(argv[i], "-c") == 0 && ++i < argc)
+        {
+            if(strcmp(argv[i], "1") == 0)
+            {
+                USB_SOF += 0;
+            }
+            else if(strcmp(argv[i], "2") == 0)
+            {
+                USB_SOF += 1;
+            }
+            else if(strcmp(argv[i], "3") == 0)
+            {
+                USB_SOF += 2;
+            }
+            else if(strcmp(argv[i], "4") == 0)
+            {
+                USB_SOF += 3;
+            }
+            else
+            {
+                fprintf(stderr, "Invalid argument for -c: %s. Use 0 or 1.\n", argv[i]);
+                exit(EXIT_FAILURE);
+            }
+        }
+        else
+        {
+            fprintf(stderr, "Unknown argument: %s\n", argv[i]);
+            fprintf(stdout, "Usage: %s [-p tty_device] [-o output_csv_file]\n", argv[0]);
+            exit(EXIT_FAILURE);
         }
     }
     fprintf(stdout, "Read port: %s\nOutput CSV file: %s\n", my_args->tty_dev, my_args->o_csv_file);
