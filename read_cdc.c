@@ -10,8 +10,8 @@
 // Frame structure constants
 uint32_t USB_SOF = 0x55555555;
 #define USB_EOF 0xAAAAAAAA
-#define N_FRAME_DATA 1250
-#define FRAME_TOTAL_INTS 1253  // SOF + timestamp + 1250 data + EOF
+#define N_FRAME_DATA 5000
+#define FRAME_TOTAL_INTS 5003  // SOF + timestamp + 5000 data + EOF
 #define FRAME_INTERVAL 100 // 100 ms
 // #define BUFF_SIZE 8192
 
@@ -217,6 +217,8 @@ int main(int argc, char* argv[])
             }
 
             static uint32_t last_frame_timestamp = 0;
+            static uint32_t first_frame_timestamp = 0;
+            
             if (last_frame_timestamp != 0) 
             {
                 uint32_t interval = (uint32_t)frame_buff[1] - last_frame_timestamp;
@@ -224,14 +226,20 @@ int main(int argc, char* argv[])
                     fprintf(stderr, "Warning: Frame interval mismatch! Expected %d ms, got %d ms.\n", FRAME_INTERVAL, interval);
                 }
             }
+            else 
+            {
+                // First frame - record the starting timestamp
+                first_frame_timestamp = (uint32_t)frame_buff[1];
+            }
             last_frame_timestamp = (uint32_t)frame_buff[1];
+            
             // Print timestamp
             // fprintf(stdout, "%d\n", last_frame_timestamp);
-            // Print data
-            uint64_t data_timestamp = (uint32_t)frame_buff[1] * 1000; // in microseconds
+            // Print data - timestamps relative to first frame
+            uint64_t data_timestamp = ((uint64_t)frame_buff[1] - first_frame_timestamp) * 1000ul; // in microseconds, relative to first frame
             for(int i = 2; i < FRAME_TOTAL_INTS - 1; i++)
             {
-                fprintf(fcsv, "%lu,%d\n", data_timestamp - last_frame_timestamp * 1000, frame_buff[i]);
+                fprintf(fcsv, "%lu,%d\n", data_timestamp, frame_buff[i]);
                 data_timestamp += (FRAME_INTERVAL * 1000) / (FRAME_TOTAL_INTS - 3); // Increment timestamp by frame interval
             }
 

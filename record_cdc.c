@@ -11,8 +11,8 @@
 // Frame structure constants
 uint32_t USB_SOF = 0x55555555;
 #define USB_EOF 0xAAAAAAAA
-#define N_FRAME_DATA 1250
-#define FRAME_TOTAL_INTS 1253  // SOF + timestamp + 1250 data + EOF
+#define N_FRAME_DATA 5000
+#define FRAME_TOTAL_INTS 5003  // SOF + timestamp + 5000 data + EOF
 #define FRAME_INTERVAL 100 // 100 ms
 // #define BUFF_SIZE 8192
 
