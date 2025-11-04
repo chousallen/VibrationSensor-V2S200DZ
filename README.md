@@ -3,7 +3,7 @@
 Firmware and PC tools to acquire vibration data from up to four Syntiant V2S200DZ sensors using an STM32H755ZI (Nucleo-144), then analyze it on a PC.
 
 - **Multi-channel support**: 4 independent DFSDM channels for simultaneous sensor acquisition
-- DFSDM captures 1‑bit PDM at 3.2 MHz and converts to 23‑bit PCM at 12.5 kHz per channel
+- DFSDM captures 1‑bit PDM at 3.2 MHz and converts to 19‑bit PCM at 50 kHz per channel
 - USB CDC streams framed data to the PC (each channel sends 100 ms frames)
 - PC utilities record CSV and perform FFT/Welch PSD/spectrogram analysis
 
@@ -18,7 +18,7 @@ Firmware and PC tools to acquire vibration data from up to four Syntiant V2S200D
 
 ## Data framing
 
-Each frame (100 ms per channel) consists of 32-bit integers (5012 bytes total):
+Each frame (100 ms per channel) contains PCM samples for that 100 ms window: 5000 samples (19-bit signed) per channel.
 
 - **SOF (Start of Frame)**: Channel-specific marker
   - Channel 1: 0x55555555
@@ -26,12 +26,12 @@ Each frame (100 ms per channel) consists of 32-bit integers (5012 bytes total):
   - Channel 3: 0x55555557
   - Channel 4: 0x55555558
 - **Timestamp**: ms since MCU startup (uint32)
-- **PCM samples**: 1250 samples (23-bit signed, right-shifted by 8 bits to fit in 32-bit)
+- **PCM samples**: 5000 samples (19-bit signed)
 - **EOF (End of Frame)**: 0xAAAAAAAA
 
-Notes:
-- 1250 samples/frame ÷ 12,500 Hz = 100 ms per frame
-- Full buffer = 2500 samples = 200 ms; each half-buffer DMA interrupt sends 1250 samples (100 ms)
+- Notes:
+- 5000 samples/frame ÷ 50,000 Hz = 100 ms per frame
+- Full buffer = 10000 samples = 200 ms; each half-buffer DMA interrupt sends 5000 samples (100 ms)
 - Channels are round-robin polled in the main loop for fairness
 - SOF markers identify which channel the frame belongs to
 - If you change SOF/EOF, pick patterns that cannot appear from DFSDM output when viewed as bytes
@@ -111,14 +111,14 @@ timeout 60 ./record_cdc -p /dev/ttyACM0 -c 1 -o data/channel1.raw
 
 **Advantages of binary format:**
 - **Compact storage**: ~40% smaller than CSV (4 bytes per sample vs ~7 bytes in text)
-- **Predictable file size**: Exactly 5004 bytes per frame (4-byte timestamp + 1250 × 4-byte samples)
+- **Predictable file size**: Exactly 20004 bytes per frame (4-byte timestamp + 5000 × 4-byte samples)
 - **Faster I/O**: No text conversion overhead
 - **Frame validation**: Automatically checks SOF/EOF markers and frame timing
 
 **File format:**
 - Continuous binary stream of frames without SOF/EOF markers
-- Each frame: 4-byte timestamp (uint32, milliseconds) + 1250 × 4-byte samples (int32)
-- Total: 5004 bytes per 100 ms frame = ~50 KB/second per channel
+- Each frame: 4-byte timestamp (uint32, milliseconds) + 5000 × 4-byte samples (int32)
+- Total: 20004 bytes per 100 ms frame = ~200 KB/second per channel
 
 ## Analyze on PC
 
@@ -135,10 +135,10 @@ Run the analysis (required arguments shown):
 
 ```bash
 python analyze_vibration.py \
-	--input data.csv \
-	--fs 12500 \
-	--calib 0.00000212 \
-	--outdir ./analysis
+  --input data.csv \
+  --fs 50000 \
+  --calib 0.00000212 \
+  --outdir ./analysis
 ```
 
 Outputs in `--outdir`:
@@ -149,7 +149,7 @@ Outputs in `--outdir`:
 
 Argument notes:
 - `--input`: CSV from `read_cdc.c`
-- `--fs`: sampling rate in Hz (default pipeline: 12500)
+- `--fs`: sampling rate in Hz (default pipeline: 50000)
 - `--calib`: counts→g (example provided)
 - `--outdir`: output directory for plots/CSV
 
@@ -171,16 +171,16 @@ python read_raw.py data/channel1.raw --psd --save-amplitude --save-spectrogram -
 
 # Custom analysis parameters
 python read_raw.py data/channel1.raw --psd \
-    --fs 12500 \
-    --calib 0.00000212 \
-    --nperseg 4096 \
-    --overlap 0.5 \
-    -o results/
+  --fs 50000 \
+  --calib 0.00000212 \
+  --nperseg 4096 \
+  --overlap 0.5 \
+  -o results/
 ```
 
 **PSD mode options:**
 - `--psd`: Enable PSD analysis mode
-- `--fs`: Sampling rate in Hz (default: 12500)
+- `--fs`: Sampling rate in Hz (default: 50000)
 - `--calib`: Calibration factor counts→g (default: 0.00000212)
 - `--nperseg`: FFT segment length (default: 4096)
 - `--overlap`: Welch overlap fraction 0-0.95 (default: 0.5)
@@ -212,12 +212,12 @@ from read_raw import read_raw_file, plot_raw_psd
 # Read timestamps and samples
 timestamps, samples = read_raw_file('data/channel1.raw')
 print(f"Loaded {len(timestamps)} frames")
-print(f"Sample array shape: {samples.shape}")  # (num_frames, 1250)
+print(f"Sample array shape: {samples.shape}")  # (num_frames, 5000)
 
 # Generate PSD analysis
 results = plot_raw_psd(
     raw_file_path='data/channel1.raw',
-    fs=12500,
+  fs=50000,
     calib=0.00000212,
     nperseg=4096,
     output_dir='results/',
@@ -235,7 +235,7 @@ print(f"Peak frequency: {results['frequencies'][results['psd'].argmax()]:.1f} Hz
 
 Approximate acceleration from counts (example scaling):
 
-accel[g] ≈ pcm × (17.7828 / 2^23)
+accel[g] ≈ pcm × (17.7828 / 2^18)  # Updated for 19-bit samples (2^18). Verify the numerator (17.7828) matches your calibrated chain.
 
 Adjust to your calibrated chain.
 

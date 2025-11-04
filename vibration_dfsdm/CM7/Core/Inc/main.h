@@ -61,7 +61,7 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define USB_CDC_TX_BUFF_SIZE 5012
+#define USB_CDC_TX_BUFF_SIZE (5000+3)*4
 #define TIM1_PRD 10
 #define TIM1_PSC 16
 
